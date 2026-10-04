@@ -1,0 +1,46 @@
+﻿@model WeatherWebApp.Models.CreateUserViewModel
+@{
+    ViewData["Title"] = "Novo Utilizador";
+}
+
+<h2>Novo Utilizador</h2>
+
+@if (ViewBag.Error != null)
+{
+    <div class="alert alert-danger">@ViewBag.Error</div>
+}
+
+<form asp-action="Create" method="post" class="mt-3">
+    <div class="mb-3">
+        <label asp-for="Username" class="form-label">Username</label>
+        <input asp-for="Username" class="form-control" />
+        <span asp-validation-for="Username" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Password" class="form-label">Password</label>
+        <input asp-for="Password" class="form-control" />
+        <span asp-validation-for="Password" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="ConfirmPassword" class="form-label">Confirmar Password</label>
+        <input asp-for="ConfirmPassword" class="form-control" />
+        <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Tipo de Utilizador</label>
+        <select asp-for="UserType" class="form-select">
+            <option value="internal">Interno (app web)</option>
+            <option value="external">Externo (API pública)</option>
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Criar</button>
+    <a asp-action="Users" class="btn btn-secondary">Cancelar</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

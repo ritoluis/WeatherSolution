@@ -1,0 +1,60 @@
+﻿<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - WeatherApp</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container-fluid">
+                <a class="navbar-brand" asp-controller="Temperature" asp-action="Index">WeatherApp</a>
+
+                @if (Context.Session.GetString("Token") != null)
+                {
+                    <div class="d-flex align-items-center">
+                        <span class="me-3 text-muted">
+                            @Context.Session.GetString("Username")
+                            @if (Context.Session.GetString("Role") == "Admin")
+                            {
+                                <span class="badge bg-primary ms-1">Admin</span>
+                            }
+                        </span>
+
+                        @if (Context.Session.GetString("Role") == "Admin")
+                        {
+                            <a asp-controller="Admin" asp-action="Users" class="btn btn-outline-primary btn-sm me-2">
+                                Utilizadores
+                            </a>
+                        }
+
+                        <a asp-controller="Account" asp-action="Logout" class="btn btn-outline-secondary btn-sm">
+                            Sair
+                        </a>
+                    </div>
+                }
+            </div>
+        </nav>
+    </header>
+
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted mt-5">
+        <div class="container">
+            &copy; @DateTime.Now.Year - WeatherApp
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
