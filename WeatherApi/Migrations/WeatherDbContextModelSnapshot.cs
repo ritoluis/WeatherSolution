@@ -53,8 +53,14 @@ namespace WeatherApi.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
+                    b.Property<byte[]>("PendingApiKeyEncrypted")
+                        .HasColumnType("longblob");
+
                     b.Property<string>("PendingApiKeyHash")
                         .HasColumnType("longtext");
+
+                    b.Property<byte[]>("PendingApiKeyIv")
+                        .HasColumnType("longblob");
 
                     b.HasKey("Id");
 

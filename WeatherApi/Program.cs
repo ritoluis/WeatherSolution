@@ -1,15 +1,14 @@
-using System.Text;
+Ôªøusing System.Text;
 using AspNetCoreRateLimit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using WeatherApi.Auth;
 using WeatherApi.Data;
 using WeatherApi.Repositories;
 using WeatherApi.Services;
 using WeatherApi.Workers;
-using Microsoft.EntityFrameworkCore;
-using WeatherApi.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,13 +18,17 @@ builder.Services.AddDbContext<WeatherDbContext>(opt =>
         builder.Configuration.GetConnectionString("DefaultConnection"),
         ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))));
 
-// ============ RepositÛrios e ServiÁos ============
+// ============ Reposit√≥rios e Servi√ßos ============
 builder.Services.AddScoped<ITemperatureRepository, TemperatureRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IDeviceRepository, DeviceRepository>();   // ‚Üê NOVO
 builder.Services.AddScoped<ITemperatureService, TemperatureService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
+builder.Services.AddScoped<ILoginAttemptService, LoginAttemptService>();
+builder.Services.AddSingleton<ISecretProtector, AesSecretProtector>();
 
-// ============ AutenticaÁ„o JWT ============
+// ============ Autentica√ß√£o (JWT + DeviceKey) ============
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -40,9 +43,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
         };
-    });
+    })
+    .AddScheme<DeviceKeyAuthenticationOptions, DeviceKeyAuthenticationHandler>(
+        "DeviceKey", options =>
+        {
+            options.HeaderName = builder.Configuration["DeviceAuth:HeaderName"] ?? "X-Device-Key";
+        });
 
-// ============ Policies de AutorizaÁ„o ============
+// ============ Policies de Autoriza√ß√£o ============
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("InternalClient", policy =>
@@ -52,10 +60,9 @@ builder.Services.AddAuthorization(options =>
         policy.RequireClaim("client_type", "external"));
 });
 
-// ============ Rate Limiting (AspNetCoreRateLimit) ============
+// ============ Rate Limiting ============
 builder.Services.AddOptions();
 builder.Services.AddMemoryCache();
-builder.Services.AddScoped<ILoginAttemptService, LoginAttemptService>();
 
 builder.Services.Configure<IpRateLimitOptions>(
     builder.Configuration.GetSection("IpRateLimiting"));
@@ -67,7 +74,7 @@ builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>()
 builder.Services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
 builder.Services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
 
-// ============ Rotina de Fundo ============
+// ============ Rotina de Fundo (tempor√°ria ‚Äî ser√° removida na Fase 3) ============
 builder.Services.AddHostedService<DailyTemperatureWorker>();
 
 // ============ Controladores e Swagger ============
@@ -102,19 +109,28 @@ var app = builder.Build();
 // ============ Pipeline ============
 app.UseSwagger();
 app.UseSwaggerUI();
-
-// Rate Limiting deve vir ANTES da autenticaÁ„o
 app.UseIpRateLimiting();
-
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
+// ============ Seed do Admin ============
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<WeatherDbContext>();
     await db.Database.MigrateAsync();
+}
 
+// Seed de desenvolvimento
+if (app.Environment.IsDevelopment())
+{
+    await DatabaseSeeder.SeedAsync(app.Services, app.Configuration);
+}
+else
+{
+    // Em produ√ß√£o, s√≥ garante o admin
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<WeatherDbContext>();
     if (!await db.Users.AnyAsync(u => u.Username == "admin"))
     {
         db.Users.Add(new WeatherApi.Entities.User
