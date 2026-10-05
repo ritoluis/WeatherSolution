@@ -17,19 +17,22 @@ public class AdminController : ControllerBase
     private readonly IApiKeyService _apiKeys;
     private readonly ISecretProtector _protector;
     private readonly ILogger<AdminController> _logger;
+    private readonly IMqttService _mqtt;
 
     public AdminController(
         IUserRepository users,
         IDeviceRepository devices,
         IApiKeyService apiKeys,
         ISecretProtector protector,
-        ILogger<AdminController> logger)
+        ILogger<AdminController> logger,
+        IMqttService mqtt)
     {
         _users = users;
         _devices = devices;
         _apiKeys = apiKeys;
         _protector = protector;
         _logger = logger;
+        _mqtt = mqtt;
     }
 
     // ============================================================
@@ -325,6 +328,33 @@ public class AdminController : ControllerBase
             message = reading == null
                 ? "Sem leituras para o dia anterior."
                 : "Média calculada com base nos dispositivos ativos."
+        });
+    }
+
+    // -------- Solicitar leitura imediata de um dispositivo --------
+
+    [HttpPost("devices/{id:int}/request-reading")]
+    public async Task<IActionResult> RequestImmediateReading(int id)
+    {
+        var device = await _devices.GetByIdAsync(id);
+        if (device == null) return NotFound();
+        if (!device.IsActive)
+            return BadRequest(new { message = "Dispositivo inativo." });
+
+        var temperature = await _mqtt.RequestReadingAsync(id, TimeSpan.FromSeconds(10));
+
+        if (temperature == null)
+            return StatusCode(504, new
+            {
+                message = "O dispositivo não respondeu a tempo. Verifique se está ligado e a subscrever o tópico."
+            });
+
+        return Ok(new
+        {
+            deviceId = id,
+            deviceName = device.Name,
+            temperature = temperature.Value,
+            readAt = DateTime.UtcNow
         });
     }
 }

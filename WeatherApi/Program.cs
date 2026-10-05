@@ -27,6 +27,9 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
 builder.Services.AddScoped<ILoginAttemptService, LoginAttemptService>();
 builder.Services.AddSingleton<ISecretProtector, AesSecretProtector>();
+builder.Services.AddSingleton<MqttService>();
+builder.Services.AddSingleton<IMqttService>(sp => sp.GetRequiredService<MqttService>());
+builder.Services.AddHostedService(sp => sp.GetRequiredService<MqttService>());
 
 // ============ Autenticação (JWT + DeviceKey) ============
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
