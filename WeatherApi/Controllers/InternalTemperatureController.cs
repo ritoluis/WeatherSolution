@@ -53,4 +53,16 @@ public class InternalTemperatureController : ControllerBase
         });
         await _users.SaveChangesAsync();
     }
+
+    [HttpGet("yesterday")]
+    public async Task<IActionResult> GetYesterday()
+    {
+        var temp = await _service.GetYesterdayAverageAsync();
+        if (temp == null)
+            return NotFound(new { message = "Sem registo para o dia anterior" });
+
+        var yesterday = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1));
+        await LogQueryAsync(yesterday, "GET /internal/temperature/yesterday");
+        return Ok(new TemperatureResponse(yesterday, temp));
+    }
 }

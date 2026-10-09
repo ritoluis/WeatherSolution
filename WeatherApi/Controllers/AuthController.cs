@@ -33,7 +33,6 @@ public class AuthController : ControllerBase
     [HttpPost("login/internal")]
     public async Task<IActionResult> LoginInternal([FromBody] LoginRequest req)
     {
-        // 1. Verificar bloqueio ANTES de tudo
         if (_loginAttempts.IsLockedOut(req.Username))
         {
             _logger.LogWarning("Login interno bloqueado para: {Username} do IP: {Ip}",
@@ -44,12 +43,10 @@ public class AuthController : ControllerBase
             });
         }
 
-        // 2. Validar credenciais
         var user = await _users.GetByUsernameAsync(req.Username);
         if (user == null || !BCrypt.Net.BCrypt.Verify(req.Password, user.PasswordHash))
         {
             _loginAttempts.RecordFailedAttempt(req.Username);
-
             var remaining = _loginAttempts.GetRemainingAttempts(req.Username);
             _logger.LogWarning("Tentativa de login interna falhada para username: {Username} do IP: {Ip}",
                 req.Username, HttpContext.Connection.RemoteIpAddress);
@@ -61,7 +58,17 @@ public class AuthController : ControllerBase
             });
         }
 
-        // 3. Sucesso — limpar tentativas
+        // Utilizadores externos NÃO podem entrar na app web
+        if (user.UserType != "Internal")
+        {
+            _logger.LogWarning(
+                "Tentativa de login interno com conta externa: {Username}", req.Username);
+            return StatusCode(403, new
+            {
+                message = "Esta conta é externa e não pode aceder à aplicação web."
+            });
+        }
+
         _loginAttempts.ResetAttempts(req.Username);
         var token = _tokens.GenerateToken(user, "internal");
 
@@ -87,7 +94,6 @@ public class AuthController : ControllerBase
         if (user == null || !BCrypt.Net.BCrypt.Verify(req.Password, user.PasswordHash))
         {
             _loginAttempts.RecordFailedAttempt(req.Username);
-
             var remaining = _loginAttempts.GetRemainingAttempts(req.Username);
             _logger.LogWarning("Tentativa de login externa falhada para username: {Username} do IP: {Ip}",
                 req.Username, HttpContext.Connection.RemoteIpAddress);
@@ -99,11 +105,15 @@ public class AuthController : ControllerBase
             });
         }
 
-        // Agentes externos NUNCA podem ser Admin
-        if (user.Role == "Admin")
+        // Utilizadores internos NÃO devem usar o endpoint externo
+        if (user.UserType != "External")
         {
-            _logger.LogWarning("Tentativa de login externo com conta Admin bloqueada: {Username}", req.Username);
-            return Forbid();
+            _logger.LogWarning(
+                "Tentativa de login externo com conta interna: {Username}", req.Username);
+            return StatusCode(403, new
+            {
+                message = "Esta conta é interna e não pode aceder à API pública."
+            });
         }
 
         _loginAttempts.ResetAttempts(req.Username);
@@ -127,6 +137,7 @@ public class AuthController : ControllerBase
             Username = req.Username,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(req.Password),
             Role = "User",
+            UserType = "External",       // ← NOVO
             CreatedAt = DateTime.UtcNow
         };
 

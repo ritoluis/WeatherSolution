@@ -34,7 +34,7 @@ public class ApiClient : IApiClient
     public async Task<TemperatureViewModel?> GetYesterdayAsync(string token)
     {
         SetToken(token);
-        var resp = await _http.GetAsync("api/public/temperature/yesterday");
+        var resp = await _http.GetAsync("api/internal/temperature/yesterday");   // ← endpoint interno
         if (!resp.IsSuccessStatusCode) return null;
 
         var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());

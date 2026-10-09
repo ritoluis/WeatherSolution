@@ -70,6 +70,7 @@ public class AdminController : ControllerBase
             Username = req.Username,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(req.Password),
             Role = "User",
+            UserType = "Internal",       // ← NOVO
             CreatedAt = DateTime.UtcNow
         };
 

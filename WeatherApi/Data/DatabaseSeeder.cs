@@ -23,6 +23,7 @@ public static class DatabaseSeeder
                 Username = "admin",
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("1978?Capicua"),
                 Role = "Admin",
+                UserType = "Internal",     // ← NOVO
                 CreatedAt = DateTime.UtcNow
             });
             logger.LogInformation("Seed: admin criado.");
@@ -36,6 +37,7 @@ public static class DatabaseSeeder
                 Username = "joao",
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("1978?Capicua"),
                 Role = "User",
+                UserType = "Internal",     // ← NOVO
                 CreatedAt = DateTime.UtcNow
             });
             logger.LogInformation("Seed: utilizador interno 'joao' criado.");
@@ -49,6 +51,7 @@ public static class DatabaseSeeder
                 Username = "agente01",
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("1978?Capicua"),
                 Role = "User",
+                UserType = "External",     // ← NOVO
                 CreatedAt = DateTime.UtcNow
             });
             logger.LogInformation("Seed: utilizador externo 'agente01' criado.");

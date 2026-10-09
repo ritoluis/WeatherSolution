@@ -25,10 +25,9 @@ public class AccountController : Controller
         HttpContext.Session.SetString("Token", token);
         HttpContext.Session.SetString("Username", model.Username);
 
-        // Determina a role consultando a API (endpoint autenticado)
-        // Simplificação: se o username for "admin", é Admin. Numa versão
-        // de produção, decodifica o JWT para ler a claim "role".
-        HttpContext.Session.SetString("Role", model.Username == "admin" ? "Admin" : "User");
+        // Lê a role diretamente do token JWT
+        var role = JwtHelper.GetClaim(token, "role") ?? "User";
+        HttpContext.Session.SetString("Role", role);
 
         return RedirectToAction("Index", "Temperature");
     }
