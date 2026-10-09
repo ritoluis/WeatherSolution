@@ -1,0 +1,21 @@
+﻿@model WeatherWebApp.Models.RequestReadingResultViewModel
+@{
+    ViewData["Title"] = "Resultado da Leitura";
+}
+
+<h2>Resultado da Leitura</h2>
+
+@if (Model.Success)
+{
+    <div class="alert alert-success mt-3">
+        <strong>@Model.DeviceName</strong> respondeu:
+        <span class="fs-4 ms-2">@Model.Temperature °C</span>
+    </div>
+    <p class="text-muted">Lido em @Model.ReadAt?.ToString("yyyy-MM-dd HH:mm:ss")</p>
+}
+else
+{
+    <div class="alert alert-danger mt-3">@Model.Message</div>
+}
+
+<a asp-action="Index" class="btn btn-primary">Voltar à lista</a>

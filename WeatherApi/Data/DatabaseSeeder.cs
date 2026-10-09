@@ -57,7 +57,7 @@ public static class DatabaseSeeder
         await db.SaveChangesAsync();
 
         // ============ Dispositivos ============
-        // Só cria dispositivos se não existir nenhum
+        // Só cria dispositivos se não existir nenhum.
         if (!await db.Devices.AnyAsync())
         {
             var devices = new[]
@@ -80,14 +80,13 @@ public static class DatabaseSeeder
                     Location = d.Location,
                     ApiKeyHash = apiKeys.HashApiKey(apiKey),
                     IsActive = d.IsActive,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    LastSeenAt = null      // explícito: ninguém comunicou ainda
                 });
             }
 
             await db.SaveChangesAsync();
 
-            // Mostra as chaves em claro no log. Em desenvolvimento, isto é aceitável.
-            // Em produção, esta informação NUNCA deve aparecer no log.
             logger.LogWarning("=======================================================");
             logger.LogWarning("  DISPOSITIVOS DE TESTE CRIADOS — GUARDE ESTAS CHAVES    ");
             logger.LogWarning("=======================================================");
@@ -99,7 +98,9 @@ public static class DatabaseSeeder
         }
 
         // ============ Leituras dos últimos 3 dias ============
-        // Apenas para dispositivos ativos
+        // Apenas para dispositivos ativos.
+        // A cada leitura, atualiza também o LastSeenAt do dispositivo
+        // (simulando o comportamento do SubmitReading real).
         var activeDevices = await db.Devices
             .Where(d => d.IsActive)
             .ToListAsync();
@@ -109,37 +110,51 @@ public static class DatabaseSeeder
 
         foreach (var device in activeDevices)
         {
+            DateTime latestReceivedAt = device.LastSeenAt ?? DateTime.MinValue;
+
             for (int i = 1; i <= 3; i++)
             {
                 var date = today.AddDays(-i);
 
-                // Verifica se já existe leitura
                 var exists = await db.DeviceReadings
                     .AnyAsync(r => r.DeviceId == device.Id && r.ReadingDate == date);
-
                 if (exists) continue;
 
-                // Valor entre 12 e 28 graus, com casas decimais
                 var temp = Math.Round((decimal)(random.NextDouble() * 16 + 12), 2);
+
+                // Simula a comunicação às 00:05 do dia seguinte à leitura
+                var receivedAt = date.AddDays(1).ToDateTime(new TimeOnly(0, 5, 0));
 
                 db.DeviceReadings.Add(new DeviceReading
                 {
                     DeviceId = device.Id,
                     ReadingDate = date,
                     AverageTemperature = temp,
-                    ReceivedAt = date.AddDays(1).ToDateTime(new TimeOnly(0, 5, 0))
+                    ReceivedAt = receivedAt
                 });
+
+                if (receivedAt > latestReceivedAt)
+                    latestReceivedAt = receivedAt;
 
                 logger.LogInformation(
                     "Seed: leitura {Date} para {Device}: {Temp} °C",
                     date, device.Name, temp);
+            }
+
+            // Atualiza o LastSeenAt com a comunicação mais recente do seed,
+            // mas só se for posterior ao valor existente.
+            if (latestReceivedAt > (device.LastSeenAt ?? DateTime.MinValue))
+            {
+                device.LastSeenAt = latestReceivedAt;
+                logger.LogInformation(
+                    "Seed: LastSeenAt de {Device} atualizado para {LastSeenAt}",
+                    device.Name, latestReceivedAt);
             }
         }
 
         await db.SaveChangesAsync();
 
         // ============ Agregação das médias diárias ============
-        // Para cada dia com leituras, recalcula a média agregada (TemperatureReadings)
         var datesToAggregate = await db.DeviceReadings
             .Select(r => r.ReadingDate)
             .Distinct()

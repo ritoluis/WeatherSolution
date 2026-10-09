@@ -36,6 +36,15 @@
                         </a>
                     </div>
                 }
+                @if (Context.Session.GetString("Role") == "Admin")
+                {
+                    <a asp-controller="Admin" asp-action="Users" class="btn btn-outline-primary btn-sm me-2">
+                        Utilizadores
+                    </a>
+                    <a asp-controller="AdminDevices" asp-action="Index" class="btn btn-outline-primary btn-sm me-2">
+                        Dispositivos
+                    </a>
+                }
             </div>
         </nav>
     </header>

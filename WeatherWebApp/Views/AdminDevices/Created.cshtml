@@ -1,0 +1,33 @@
+﻿@model WeatherWebApp.Models.CreateDeviceResultViewModel
+@{
+    ViewData["Title"] = "Dispositivo Criado";
+}
+
+<h2>Dispositivo Criado</h2>
+
+<div class="alert alert-warning mt-3">
+    <strong>Guarde a API Key.</strong> Esta chave só é mostrada uma única vez.
+    Se a perder, terá de a regenerar.
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3">ID</dt>
+            <dd class="col-sm-9">@Model.Id</dd>
+
+            <dt class="col-sm-3">Nome</dt>
+            <dd class="col-sm-9">@Model.Name</dd>
+
+            <dt class="col-sm-3">Localização</dt>
+            <dd class="col-sm-9">@(Model.Location ?? "-")</dd>
+
+            <dt class="col-sm-3">API Key</dt>
+            <dd class="col-sm-9">
+                <code class="user-select-all">@Model.ApiKey</code>
+            </dd>
+        </dl>
+    </div>
+</div>
+
+<a asp-action="Index" class="btn btn-primary mt-3">Voltar à lista</a>

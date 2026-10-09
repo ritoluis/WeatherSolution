@@ -96,4 +96,136 @@ public class ApiClient : IApiClient
 
         return (true, "Utilizador criado com sucesso");
     }
+
+    // Na classe ApiClient, acrescenta os métodos:
+
+    public async Task<List<DeviceListViewModel>?> GetDevicesAsync(string token)
+    {
+        SetToken(token);
+        var resp = await _http.GetAsync("api/admin/devices");
+        if (!resp.IsSuccessStatusCode) return null;
+        return JsonSerializer.Deserialize<List<DeviceListViewModel>>(
+            await resp.Content.ReadAsStringAsync(), _json);
+    }
+
+    public async Task<DeviceDetailsViewModel?> GetDeviceDetailsAsync(string token, int id, int limit = 30)
+    {
+        SetToken(token);
+
+        var deviceResp = await _http.GetAsync($"api/admin/devices/{id}");
+        if (!deviceResp.IsSuccessStatusCode) return null;
+
+        var device = JsonSerializer.Deserialize<DeviceListViewModel>(
+            await deviceResp.Content.ReadAsStringAsync(), _json);
+        if (device == null) return null;
+
+        var readingsResp = await _http.GetAsync($"api/admin/devices/{id}/readings?limit={limit}");
+        var readings = readingsResp.IsSuccessStatusCode
+            ? JsonSerializer.Deserialize<DeviceReadingsResponse>(
+                await readingsResp.Content.ReadAsStringAsync(), _json)
+            : null;
+
+        return new DeviceDetailsViewModel
+        {
+            Id = device.Id,
+            Name = device.Name,
+            Location = device.Location,
+            IsActive = device.IsActive,
+            CreatedAt = device.CreatedAt,
+            LastSeenAt = device.LastSeenAt,
+            Readings = readings?.Readings ?? new()
+        };
+    }
+
+    public async Task<CreateDeviceResultViewModel?> CreateDeviceAsync(string token, CreateDeviceViewModel model)
+    {
+        SetToken(token);
+        var resp = await _http.PostAsJsonAsync("api/admin/devices", new
+        {
+            name = model.Name,
+            location = model.Location
+        });
+        if (!resp.IsSuccessStatusCode) return null;
+
+        return JsonSerializer.Deserialize<CreateDeviceResultViewModel>(
+            await resp.Content.ReadAsStringAsync(), _json);
+    }
+
+    public async Task<bool> ActivateDeviceAsync(string token, int id)
+    {
+        SetToken(token);
+        var resp = await _http.PutAsync($"api/admin/devices/{id}/activate", null);
+        return resp.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> DeactivateDeviceAsync(string token, int id)
+    {
+        SetToken(token);
+        var resp = await _http.PutAsync($"api/admin/devices/{id}/deactivate", null);
+        return resp.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> DeleteDeviceAsync(string token, int id)
+    {
+        SetToken(token);
+        var resp = await _http.DeleteAsync($"api/admin/devices/{id}");
+        return resp.IsSuccessStatusCode;
+    }
+
+    public async Task<RequestReadingResultViewModel> RequestReadingAsync(string token, int id)
+    {
+        SetToken(token);
+        var resp = await _http.PostAsync($"api/admin/devices/{id}/request-reading", null);
+
+        if (resp.StatusCode == System.Net.HttpStatusCode.GatewayTimeout)
+        {
+            return new RequestReadingResultViewModel
+            {
+                Success = false,
+                Message = "O dispositivo não respondeu em 10 segundos. Verifique se está ligado ao broker MQTT.",
+                DeviceId = id
+            };
+        }
+
+        if (!resp.IsSuccessStatusCode)
+        {
+            var body = await resp.Content.ReadAsStringAsync();
+            return new RequestReadingResultViewModel
+            {
+                Success = false,
+                Message = $"Erro {(int)resp.StatusCode}: {body}",
+                DeviceId = id
+            };
+        }
+
+        var result = JsonSerializer.Deserialize<RequestReadingResponse>(
+            await resp.Content.ReadAsStringAsync(), _json);
+
+        return new RequestReadingResultViewModel
+        {
+            Success = true,
+            Message = "Leitura obtida com sucesso.",
+            DeviceId = result?.DeviceId ?? id,
+            DeviceName = result?.DeviceName ?? string.Empty,
+            Temperature = result?.Temperature,
+            ReadAt = result?.ReadAt
+        };
+    }
+
+
+}
+// Classes internas para desserializar respostas da API
+internal class DeviceReadingsResponse
+{
+    public int DeviceId { get; set; }
+    public string DeviceName { get; set; } = string.Empty;
+    public List<DeviceReadingViewModel> Readings { get; set; } = new();
+}
+
+internal class RequestReadingResponse
+{
+    public int DeviceId { get; set; }
+    public string DeviceName { get; set; } = string.Empty;
+    public decimal Temperature { get; set; }
+    public DateTime ReadAt { get; set; }
 }
