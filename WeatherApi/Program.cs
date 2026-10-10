@@ -12,6 +12,19 @@ using WeatherApi.Workers;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configurar Kestrel PRIMEIRO — antes de tudo
+//builder.WebHost.ConfigureKestrel(serverOptions =>
+//{
+//    serverOptions.Listen(System.Net.IPAddress.Any, 7119, listenOptions =>
+//    {
+//        listenOptions.UseHttps(httpsOptions =>
+//        {
+//            httpsOptions.ClientCertificateMode =
+//                Microsoft.AspNetCore.Server.Kestrel.Https.ClientCertificateMode.NoCertificate;
+//        });
+//    });
+//});
+
 // ============ Base de Dados ============
 builder.Services.AddDbContext<WeatherDbContext>(opt =>
     opt.UseMySql(
@@ -106,6 +119,7 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
+
 
 var app = builder.Build();
 

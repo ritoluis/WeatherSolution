@@ -1,4 +1,5 @@
-﻿@model WeatherWebApp.Models.TemperatureViewModel
+﻿@using WeatherWebApp.Extensions
+@model WeatherWebApp.Models.TemperatureViewModel
 @{
     ViewData["Title"] = "Temperatura";
 }
@@ -55,7 +56,7 @@ else if (!string.IsNullOrEmpty(Model.Message))
                 <tr>
                     <td>@q.Username</td>
                     <td>@q.Role</td>
-                    <td>@q.QueryDate.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td>@q.QueryDate.ToLocalString()</td>
                     <td>@q.Endpoint</td>
                     <td>@q.TargetDate.ToString("yyyy-MM-dd")</td>
                 </tr>

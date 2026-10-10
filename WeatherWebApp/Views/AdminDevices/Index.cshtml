@@ -1,4 +1,5 @@
-﻿@model List<WeatherWebApp.Models.DeviceListViewModel>
+﻿@using WeatherWebApp.Extensions
+@model List<WeatherWebApp.Models.DeviceListViewModel>
 @{
     ViewData["Title"] = "Dispositivos";
 }
@@ -56,7 +57,7 @@ else
                     <td>
                         @if (d.LastSeenAt.HasValue)
                         {
-                            @d.LastSeenAt.Value.ToString("yyyy-MM-dd HH:mm")
+                            @d.LastSeenAt.ToLocalString()
                         }
                         else
                         {
