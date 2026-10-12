@@ -34,14 +34,39 @@ public class ApiClient : IApiClient
     public async Task<TemperatureViewModel?> GetYesterdayAsync(string token)
     {
         SetToken(token);
-        var resp = await _http.GetAsync("api/internal/temperature/yesterday");   // ← endpoint interno
+        var resp = await _http.GetAsync("api/internal/temperature/yesterday");
+        var body = await resp.Content.ReadAsStringAsync();
+
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            // Extrai a mensagem do corpo de erro
+            try
+            {
+                var doc = JsonDocument.Parse(body);
+                return new TemperatureViewModel
+                {
+                    Date = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1)),
+                    Message = doc.RootElement.GetProperty("message").GetString()
+                              ?? "Sem leitura registada."
+                };
+            }
+            catch
+            {
+                return new TemperatureViewModel
+                {
+                    Date = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1)),
+                    Message = "Sem leitura registada."
+                };
+            }
+        }
+
         if (!resp.IsSuccessStatusCode) return null;
 
-        var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
+        var okDoc = JsonDocument.Parse(body);
         return new TemperatureViewModel
         {
-            Date = DateOnly.Parse(doc.RootElement.GetProperty("date").GetString()!),
-            AverageTemperature = doc.RootElement.GetProperty("averageTemperature").GetDecimal()
+            Date = DateOnly.Parse(okDoc.RootElement.GetProperty("date").GetString()!),
+            AverageTemperature = okDoc.RootElement.GetProperty("averageTemperature").GetDecimal()
         };
     }
 
@@ -49,13 +74,37 @@ public class ApiClient : IApiClient
     {
         SetToken(token);
         var resp = await _http.GetAsync($"api/internal/temperature/by-date/{date:yyyy-MM-dd}");
+        var body = await resp.Content.ReadAsStringAsync();
+
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            try
+            {
+                var doc = JsonDocument.Parse(body);
+                return new TemperatureViewModel
+                {
+                    Date = date,
+                    Message = doc.RootElement.GetProperty("message").GetString()
+                              ?? "Sem leitura registada."
+                };
+            }
+            catch
+            {
+                return new TemperatureViewModel
+                {
+                    Date = date,
+                    Message = "Sem leitura registada."
+                };
+            }
+        }
+
         if (!resp.IsSuccessStatusCode) return null;
 
-        var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
+        var okDoc = JsonDocument.Parse(body);
         return new TemperatureViewModel
         {
-            Date = DateOnly.Parse(doc.RootElement.GetProperty("date").GetString()!),
-            AverageTemperature = doc.RootElement.GetProperty("averageTemperature").GetDecimal()
+            Date = DateOnly.Parse(okDoc.RootElement.GetProperty("date").GetString()!),
+            AverageTemperature = okDoc.RootElement.GetProperty("averageTemperature").GetDecimal()
         };
     }
 
