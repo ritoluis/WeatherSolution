@@ -13,32 +13,43 @@
             <div class="container-fluid">
                 <a class="navbar-brand" asp-controller="Temperature" asp-action="Index">WeatherApp</a>
 
-                @if (Context.Session.GetString("Token") != null)
-                {
-                    <div class="d-flex align-items-center">
-                        <span class="me-3 text-muted">
-                            @Context.Session.GetString("Username")
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#navbarContent" aria-controls="navbarContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarContent">
+                    @if (Context.Session.GetString("Token") != null)
+                    {
+                        <div class="d-flex flex-column flex-sm-row align-items-sm-center ms-sm-auto mt-2 mt-sm-0">
+                            <span class="me-sm-3 text-muted mb-2 mb-sm-0">
+                                @Context.Session.GetString("Username")
+                                @if (Context.Session.GetString("Role") == "Admin")
+                                {
+                                    <span class="badge bg-primary ms-1">Admin</span>
+                                }
+                            </span>
+
                             @if (Context.Session.GetString("Role") == "Admin")
                             {
-                                <span class="badge bg-primary ms-1">Admin</span>
+                                <a asp-controller="Admin" asp-action="Users"
+                                   class="btn btn-outline-primary btn-sm me-sm-2 mb-2 mb-sm-0">
+                                    Utilizadores
+                                </a>
+                                <a asp-controller="AdminDevices" asp-action="Index"
+                                   class="btn btn-outline-primary btn-sm me-sm-2 mb-2 mb-sm-0">
+                                    Dispositivos
+                                </a>
                             }
-                        </span>
 
-                        @if (Context.Session.GetString("Role") == "Admin")
-                        {
-                            <a asp-controller="Admin" asp-action="Users" class="btn btn-outline-primary btn-sm me-2">
-                                Utilizadores
+                            <a asp-controller="Account" asp-action="Logout"
+                               class="btn btn-outline-secondary btn-sm">
+                                Sair
                             </a>
-                            <a asp-controller="AdminDevices" asp-action="Index" class="btn btn-outline-primary btn-sm me-2">
-                                Dispositivos
-                            </a>
-                        }
-
-                        <a asp-controller="Account" asp-action="Logout" class="btn btn-outline-secondary btn-sm">
-                            Sair
-                        </a>
-                    </div>
-                }
+                        </div>
+                    }
+                </div>
             </div>
         </nav>
     </header>

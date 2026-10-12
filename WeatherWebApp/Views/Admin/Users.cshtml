@@ -12,25 +12,26 @@
 {
     <div class="alert alert-success">@TempData["Success"]</div>
 }
-
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Username</th>
-            <th>Role</th>
-            <th>Criado em</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var u in Model)
-        {
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
             <tr>
-                <td>@u.Id</td>
-                <td>@u.Username</td>
-                <td>@u.Role</td>
-                <td>@u.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Role</th>
+                <th>Criado em</th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @foreach (var u in Model)
+            {
+                <tr>
+                    <td>@u.Id</td>
+                    <td>@u.Username</td>
+                    <td>@u.Role</td>
+                    <td>@u.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

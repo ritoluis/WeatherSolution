@@ -1,4 +1,6 @@
-﻿namespace WeatherWebApp.Models;
+﻿using System.Globalization;
+
+namespace WeatherWebApp.Models;
 
 public class TemperatureViewModel
 {
@@ -7,4 +9,8 @@ public class TemperatureViewModel
     public string Message { get; set; } = string.Empty;
     public bool IsAdmin { get; set; }
     public List<QueryLogViewModel> Queries { get; set; } = new();
+
+    // Propriedade formatada
+    public string AverageTemperatureDisplay =>
+        AverageTemperature?.ToString("0.00", CultureInfo.InvariantCulture) ?? "-";
 }

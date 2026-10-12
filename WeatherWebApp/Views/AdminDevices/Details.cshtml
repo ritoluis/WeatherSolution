@@ -27,7 +27,9 @@
 
             <dt class="col-sm-3">Última comunicação</dt>
             <dd class="col-sm-9">
-                @Model.LastSeenAt.ToLocalString() ?? "nunca comunicou")
+                @(Model.LastSeenAt.HasValue
+                    ? Model.LastSeenAt.Value.ToLocalString()
+                    : "nunca comunicou")
             </dd>
         </dl>
     </div>
@@ -53,7 +55,7 @@ else
             {
                 <tr>
                     <td>@r.ReadingDate</td>
-                    <td>@r.AverageTemperature °C</td>
+                    <td>@r.AverageTemperatureDisplay °C</td>
                     <td>@r.ReceivedAt.ToLocalString()</td>
                 </tr>
             }

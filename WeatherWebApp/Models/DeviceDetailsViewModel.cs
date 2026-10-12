@@ -1,4 +1,6 @@
-﻿namespace WeatherWebApp.Models;
+﻿using System.Globalization;
+
+namespace WeatherWebApp.Models;
 
 public class DeviceDetailsViewModel
 {
@@ -17,4 +19,6 @@ public class DeviceReadingViewModel
     public DateOnly ReadingDate { get; set; }
     public decimal AverageTemperature { get; set; }
     public DateTime ReceivedAt { get; set; }
+    public string AverageTemperatureDisplay =>
+    AverageTemperature.ToString("0.00", CultureInfo.InvariantCulture);
 }
