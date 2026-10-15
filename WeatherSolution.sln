@@ -9,6 +9,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeatherWebApp", "WeatherWeb
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeatherExternalClient", "WeatherExternalClient\WeatherExternalClient.csproj", "{F7F391F5-BAFB-442F-9ABA-13BFED43A118}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{CFA9553A-6B52-4593-9575-350B96D5F7D8}"
+	ProjectSection(SolutionItems) = preProject
+		..\..\..\Downloads\backup-restore.md = ..\..\..\Downloads\backup-restore.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

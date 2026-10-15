@@ -33,22 +33,22 @@ public class TemperatureService : ITemperatureService
         return readings.Select(r => new TemperatureResponse(r.ReadingDate, r.AverageTemperature));
     }
 
-    public async Task RegisterDailyAverageAsync()
-    {
-        var random = new Random();
-        var temp = Math.Round((decimal)(random.NextDouble() * 20 + 5), 2);
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+    //public async Task RegisterDailyAverageAsync()
+    //{
+    //    var random = new Random();
+    //    var temp = Math.Round((decimal)(random.NextDouble() * 20 + 5), 2);
+    //    var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
-        var existing = await _repo.GetByDateAsync(today);
-        if (existing != null) return;
+    //    var existing = await _repo.GetByDateAsync(today);
+    //    if (existing != null) return;
 
-        await _repo.AddAsync(new TemperatureReading
-        {
-            ReadingDate = today,
-            AverageTemperature = temp
-        });
-        await _repo.SaveChangesAsync();
-    }
+    //    await _repo.AddAsync(new TemperatureReading
+    //    {
+    //        ReadingDate = today,
+    //        AverageTemperature = temp
+    //    });
+    //    await _repo.SaveChangesAsync();
+    //}
 
     public async Task RecalculateDailyAverageAsync(DateOnly date)
     {

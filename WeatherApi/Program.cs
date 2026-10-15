@@ -8,7 +8,7 @@ using WeatherApi.Auth;
 using WeatherApi.Data;
 using WeatherApi.Repositories;
 using WeatherApi.Services;
-using WeatherApi.Workers;
+//using WeatherApi.Workers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -91,7 +91,7 @@ builder.Services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounte
 builder.Services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
 
 // ============ Rotina de Fundo (temporária — será removida na Fase 3) ============
-builder.Services.AddHostedService<DailyTemperatureWorker>();
+//builder.Services.AddHostedService<DailyTemperatureWorker>();
 
 // ============ Controladores e Swagger ============
 builder.Services.AddControllers();
