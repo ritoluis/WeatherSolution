@@ -22,6 +22,81 @@ namespace WeatherApi.Migrations
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
+            modelBuilder.Entity("WeatherApi.Entities.Device", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ApiKeyHash")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("KeyRotationPending")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime?>("LastSeenAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Location")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<byte[]>("PendingApiKeyEncrypted")
+                        .HasColumnType("longblob");
+
+                    b.Property<string>("PendingApiKeyHash")
+                        .HasColumnType("longtext");
+
+                    b.Property<byte[]>("PendingApiKeyIv")
+                        .HasColumnType("longblob");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name");
+
+                    b.ToTable("Devices");
+                });
+
+            modelBuilder.Entity("WeatherApi.Entities.DeviceReading", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("AverageTemperature")
+                        .HasColumnType("decimal(65,30)");
+
+                    b.Property<int>("DeviceId")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("ReadingDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime>("ReceivedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DeviceId", "ReadingDate")
+                        .IsUnique();
+
+                    b.ToTable("DeviceReadings");
+                });
+
             modelBuilder.Entity("WeatherApi.Entities.TemperatureReading", b =>
                 {
                     b.Property<int>("Id")
@@ -66,6 +141,10 @@ namespace WeatherApi.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<string>("UserType")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
                     b.Property<string>("Username")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
@@ -106,6 +185,17 @@ namespace WeatherApi.Migrations
                     b.ToTable("UserQueries");
                 });
 
+            modelBuilder.Entity("WeatherApi.Entities.DeviceReading", b =>
+                {
+                    b.HasOne("WeatherApi.Entities.Device", "Device")
+                        .WithMany("Readings")
+                        .HasForeignKey("DeviceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Device");
+                });
+
             modelBuilder.Entity("WeatherApi.Entities.UserQuery", b =>
                 {
                     b.HasOne("WeatherApi.Entities.User", "User")
@@ -115,6 +205,11 @@ namespace WeatherApi.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("WeatherApi.Entities.Device", b =>
+                {
+                    b.Navigation("Readings");
                 });
 
             modelBuilder.Entity("WeatherApi.Entities.User", b =>

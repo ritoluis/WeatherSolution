@@ -1,0 +1,98 @@
+﻿@using WeatherWebApp.Extensions
+@model List<WeatherWebApp.Models.DeviceListViewModel>
+@{
+    ViewData["Title"] = "Dispositivos";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Dispositivos</h2>
+    <a asp-action="Create" class="btn btn-success">+ Novo Dispositivo</a>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-warning">@TempData["Error"]</div>
+}
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">Nenhum dispositivo registado. Crie o primeiro.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Localização</th>
+                    <th>Estado</th>
+                    <th>Última Leitura</th>
+                    <th>Última Comunicação</th>
+                    <th class="text-end">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var d in Model)
+                {
+                    <tr>
+                        <td>
+                            <a asp-action="Details" asp-route-id="@d.Id">@d.Name</a>
+                        </td>
+                        <td>@(d.Location ?? "-")</td>
+                        <td><span class="badge @d.StatusCss">@d.StatusLabel</span></td>
+                        <td>
+                            @if (d.LastReadingTemperature.HasValue)
+                            {
+                                <text>@d.LastReadingDate - @d.LastReadingTemperatureDisplay °C</text>
+                            }
+                            else
+                            {
+                                <span class="text-muted">sem leitura</span>
+                            }
+                        </td>
+                        <td>
+                            @if (d.LastSeenAt.HasValue)
+                            {
+                                @d.LastSeenAt.ToLocalString()
+                            }
+                            else
+                            {
+                                <span class="text-muted">nunca comunicou</span>
+                            }
+                        </td>
+                        <td class="text-end">
+                            <div class="d-flex flex-wrap justify-content-end gap-1">
+                                <form asp-action="RequestReading" asp-route-id="@d.Id" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-primary"
+                                    @(d.IsActive ? "" : "disabled")>
+                                        Ler Agora
+                                    </button>
+                                </form>
+
+                                <form asp-action="@(d.IsActive ? "Deactivate" : "Activate")"
+                                      asp-route-id="@d.Id" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                        @(d.IsActive ? "Desativar" : "Ativar")
+                                    </button>
+                                </form>
+
+                                <form asp-action="Delete" asp-route-id="@d.Id" method="post"
+                                      onsubmit="return confirm('Eliminar o dispositivo @d.Name?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

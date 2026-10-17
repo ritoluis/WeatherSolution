@@ -18,9 +18,17 @@ public class PublicTemperatureController : ControllerBase
     public async Task<IActionResult> GetYesterday()
     {
         var temp = await _service.GetYesterdayAverageAsync();
-        if (temp == null) return NotFound(new { message = "Sem registo para ontem" });
-
         var yesterday = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1));
+
+        if (temp == null)
+        {
+            return NotFound(new
+            {
+                date = yesterday,
+                message = $"Sem leitura registada para {yesterday:yyyy-MM-dd}."
+            });
+        }
+
         return Ok(new TemperatureResponse(yesterday, temp));
     }
 }

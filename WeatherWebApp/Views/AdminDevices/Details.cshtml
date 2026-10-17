@@ -1,0 +1,64 @@
+﻿@using WeatherWebApp.Extensions
+@model WeatherWebApp.Models.DeviceDetailsViewModel
+@{
+    ViewData["Title"] = $"Detalhes — {Model.Name}";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>@Model.Name</h2>
+    <a asp-action="Index" class="btn btn-outline-secondary">Voltar</a>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Localização</dt>
+            <dd class="col-sm-9">@(Model.Location ?? "-")</dd>
+
+            <dt class="col-sm-3">Estado</dt>
+            <dd class="col-sm-9">
+                <span class="badge @(Model.IsActive ? "bg-success" : "bg-secondary")">
+                    @(Model.IsActive ? "Ativo" : "Inativo")
+                </span>
+            </dd>
+
+            <dt class="col-sm-3">Criado em</dt>
+            <dd class="col-sm-9">@Model.CreatedAt.ToLocalString()</dd>
+
+            <dt class="col-sm-3">Última comunicação</dt>
+            <dd class="col-sm-9">
+                @(Model.LastSeenAt.HasValue
+                    ? Model.LastSeenAt.Value.ToLocalString()
+                    : "nunca comunicou")
+            </dd>
+        </dl>
+    </div>
+</div>
+
+<h3>Histórico de Leituras</h3>
+@if (!Model.Readings.Any())
+{
+    <div class="alert alert-info">Ainda não há leituras registadas.</div>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Temperatura</th>
+                <th>Recebido em</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var r in Model.Readings)
+            {
+                <tr>
+                    <td>@r.ReadingDate</td>
+                    <td>@r.AverageTemperatureDisplay °C</td>
+                    <td>@r.ReceivedAt.ToLocalString()</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
