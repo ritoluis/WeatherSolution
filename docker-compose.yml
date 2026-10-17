@@ -1,0 +1,117 @@
+services:
+  # ============================================================
+  #  MySQL
+  # ============================================================
+  mysql:
+    image: mysql:8.0
+    container_name: weather-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
+      MYSQL_DATABASE: WeatherDb
+      MYSQL_USER: WeatherSolution
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+    ports:
+      - "127.0.0.1:3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - weather-net
+
+  # ============================================================
+  #  Mosquitto (broker MQTT)
+  # ============================================================
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: weather-mosquitto
+    restart: unless-stopped
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+    ports:
+      - "1883:1883"
+    networks:
+      - weather-net
+
+  # ============================================================
+  #  API (WeatherApi)
+  # ============================================================
+  api:
+    build:
+      context: ./WeatherApi
+      dockerfile: Dockerfile
+    container_name: weather-api
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      mosquitto:
+        condition: service_started
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: "Server=mysql;Port=3306;Database=WeatherDb;User=WeatherSolution;Password=${MYSQL_PASSWORD};CharSet=utf8mb4;"
+      Jwt__Key: "${JWT_KEY}"
+      Jwt__Issuer: "WeatherApi"
+      Jwt__Audience: "WeatherClients"
+      Jwt__ExpiryMinutes: "60"
+      DeviceAuth__HeaderName: "X-Device-Key"
+      DeviceAuth__KeyPrefix: "dev_"
+      DeviceAuth__KeyLength: "32"
+      Mqtt__BrokerHost: "mosquitto"
+      Mqtt__BrokerPort: "1883"
+      Mqtt__Username: "WeatherApi"
+      Mqtt__Password: "${MQTT_API_PASSWORD}"
+      Mqtt__ClientId: "WeatherApi-Backend"
+    ports:
+      - "127.0.0.1:5000:8080"
+    networks:
+      - weather-net
+
+  # ============================================================
+  #  App MVC (WeatherWebApp)
+  # ============================================================
+  webapp:
+    build:
+      context: ./WeatherWebApp
+      dockerfile: Dockerfile
+    container_name: weather-webapp
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ApiSettings__BaseUrl: "http://api:8080/"
+    ports:
+      - "127.0.0.1:5001:8080"
+    networks:
+      - weather-net
+
+  # ============================================================
+  #  Nginx (reverse proxy)
+  # ============================================================
+  nginx:
+    image: nginx:stable-alpine
+    container_name: weather-nginx
+    restart: unless-stopped
+    depends_on:
+      - api
+      - webapp
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/certbot-webroot:/var/www/certbot:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - weather-net
+
+networks:
+  weather-net:
+    driver: bridge
