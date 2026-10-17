@@ -7,7 +7,12 @@ namespace WeatherApi.Services;
 public class TemperatureService : ITemperatureService
 {
     private readonly ITemperatureRepository _repo;
-    public TemperatureService(ITemperatureRepository repo) => _repo = repo;
+    private readonly IDeviceRepository _deviceRepo;
+    public TemperatureService(ITemperatureRepository repo, IDeviceRepository deviceRepo)
+    {
+        _repo = repo;
+        _deviceRepo = deviceRepo;
+    }
 
     public async Task<decimal?> GetYesterdayAverageAsync()
     {
@@ -28,20 +33,58 @@ public class TemperatureService : ITemperatureService
         return readings.Select(r => new TemperatureResponse(r.ReadingDate, r.AverageTemperature));
     }
 
-    public async Task RegisterDailyAverageAsync()
+    //public async Task RegisterDailyAverageAsync()
+    //{
+    //    var random = new Random();
+    //    var temp = Math.Round((decimal)(random.NextDouble() * 20 + 5), 2);
+    //    var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+    //    var existing = await _repo.GetByDateAsync(today);
+    //    if (existing != null) return;
+
+    //    await _repo.AddAsync(new TemperatureReading
+    //    {
+    //        ReadingDate = today,
+    //        AverageTemperature = temp
+    //    });
+    //    await _repo.SaveChangesAsync();
+    //}
+
+    public async Task RecalculateDailyAverageAsync(DateOnly date)
     {
-        var random = new Random();
-        var temp = Math.Round((decimal)(random.NextDouble() * 20 + 5), 2);
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        // Vai buscar todos os dispositivos ativos
+        var activeDeviceIds = await _deviceRepo.GetActiveDeviceIdsAsync();
 
-        var existing = await _repo.GetByDateAsync(today);
-        if (existing != null) return;
-
-        await _repo.AddAsync(new TemperatureReading
+        if (!activeDeviceIds.Any())
         {
-            ReadingDate = today,
-            AverageTemperature = temp
-        });
+            // Sem dispositivos ativos: não há média para calcular
+            return;
+        }
+
+        // Vai buscar as leituras desse dia, apenas de dispositivos ativos
+        var readings = await _deviceRepo.GetReadingsByDateAsync(date, activeDeviceIds);
+
+        if (!readings.Any())
+            return;
+
+        var average = readings.Average(r => r.AverageTemperature);
+        average = Math.Round(average, 2);
+
+        // Atualiza ou cria o registo em TemperatureReadings
+        var existing = await _repo.GetByDateAsync(date);
+        if (existing != null)
+        {
+            existing.AverageTemperature = average;
+        }
+        else
+        {
+            await _repo.AddAsync(new TemperatureReading
+            {
+                ReadingDate = date,
+                AverageTemperature = average
+            });
+        }
+
         await _repo.SaveChangesAsync();
     }
 }

@@ -26,9 +26,18 @@ public class InternalTemperatureController : ControllerBase
     public async Task<IActionResult> GetByDate(DateOnly date)
     {
         var temp = await _service.GetByDateAsync(date);
-        if (temp == null) return NotFound();
-
         await LogQueryAsync(date, $"GET /internal/temperature/by-date/{date}");
+
+        if (temp == null)
+        {
+            return NotFound(new
+            {
+                date,
+                message = $"Sem leitura registada para {date:yyyy-MM-dd}. " +
+                          "O dispositivo não comunicou ou a API esteve indisponível."
+            });
+        }
+
         return Ok(new TemperatureResponse(date, temp));
     }
 
@@ -52,5 +61,25 @@ public class InternalTemperatureController : ControllerBase
             TargetDate = targetDate
         });
         await _users.SaveChangesAsync();
+    }
+
+    [HttpGet("yesterday")]
+    public async Task<IActionResult> GetYesterday()
+    {
+        var yesterday = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1));
+        var temp = await _service.GetByDateAsync(yesterday);
+        await LogQueryAsync(yesterday, "GET /internal/temperature/yesterday");
+
+        if (temp == null)
+        {
+            return NotFound(new
+            {
+                date = yesterday,
+                message = $"Sem leitura registada para {yesterday:yyyy-MM-dd}. " +
+                          "O dispositivo não comunicou ou a API esteve indisponível."
+            });
+        }
+
+        return Ok(new TemperatureResponse(yesterday, temp));
     }
 }

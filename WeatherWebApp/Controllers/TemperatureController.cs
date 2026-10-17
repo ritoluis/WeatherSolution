@@ -20,31 +20,31 @@ public class TemperatureController : Controller
 
         if (date.HasValue)
         {
-            // Utilizador escolheu uma data: consulta essa data
             var result = await _api.GetByDateAsync(Token, date.Value);
             if (result == null)
             {
-                model.Message = $"Sem registo para {date.Value:yyyy-MM-dd}";
+                model.Message = "Erro ao contactar a API.";
                 model.Date = date.Value;
             }
             else
             {
                 model.Date = result.Date;
                 model.AverageTemperature = result.AverageTemperature;
+                model.Message = result.Message;
             }
         }
         else
         {
-            // Sem data: mostra o dia anterior por defeito
             var result = await _api.GetYesterdayAsync(Token);
             if (result == null)
             {
-                model.Message = "Sem registo para o dia anterior";
+                model.Message = "Erro ao contactar a API.";
             }
             else
             {
                 model.Date = result.Date;
                 model.AverageTemperature = result.AverageTemperature;
+                model.Message = result.Message;
             }
         }
 
