@@ -15,6 +15,14 @@ public class WeatherDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // Mapear os nomes das tabelas para minúsculas,
+        // que é como o MySQL os guarda no Windows e como já existem no backup.
+        modelBuilder.Entity<User>().ToTable("users");
+        modelBuilder.Entity<Device>().ToTable("devices");
+        modelBuilder.Entity<DeviceReading>().ToTable("devicereadings");
+        modelBuilder.Entity<TemperatureReading>().ToTable("temperaturereadings");
+        modelBuilder.Entity<UserQuery>().ToTable("userqueries");
+
         modelBuilder.Entity<TemperatureReading>()
             .HasIndex(t => t.ReadingDate).IsUnique();
 
