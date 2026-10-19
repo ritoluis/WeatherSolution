@@ -401,3 +401,9 @@ FodyWeavers.xsd
 *.sln.iml
 .env
 mosquitto/config/passwd.txt
+
+# Dados e certificados (não devem ir para o Git)
+certbot/
+mysql/
+nginx/certbot-webroot/
+*.sql
