@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿// ---  Projeto WeatherApi ---
+using System.Text;
 using AspNetCoreRateLimit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
