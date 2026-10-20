@@ -407,3 +407,4 @@ certbot/
 mysql/
 nginx/certbot-webroot/
 *.sql
+backups/
