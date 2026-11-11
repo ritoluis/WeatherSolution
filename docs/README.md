@@ -11,6 +11,7 @@ O WeatherSolution é composto por três aplicações que trabalham em conjunto:
 | **WeatherApi** | ASP.NET Core Web API | Endpoints REST, autenticação, acesso à base de dados, integração MQTT |
 | **WeatherWebApp** | ASP.NET Core MVC | Interface web para utilizadores internos e administradores |
 | **WeatherExternalClient** | Consola .NET | Simulador de agente externo, para testar a API pública |
+| **AppWeatherSolutionConfig** | App Android (Kotlin + Compose) | Configuração do ESP32 via BLE (Wi-Fi, MQTT, API) |
 
 Além destas, há um **dispositivo ESP32** que envia leituras de temperatura para a API e responde a pedidos de leitura em tempo real via MQTT.
 
@@ -32,10 +33,12 @@ Além destas, há um **dispositivo ESP32** que envia leituras de temperatura par
 | [api.md](api.md) | Endpoints, autenticação JWT, API Keys, policies, rate limiting |
 | [webapp.md](webapp.md) | MVC, views Razor, fluxo de login, dashboard do admin |
 | [mqtt.md](mqtt.md) | Broker Mosquitto, tópicos, rotação de chaves, leitura sob pedido |
-| [esp32.md](esp32.md) | Hardware, firmware, NTP, envio diário, modo simulado |
+| [esp32.md](esp32.md) | Hardware, firmware, NTP, envio diário, modo configuração BLE |
+| [app-android.md](app-android.md) | App Android (Kotlin + Compose) de configuração do ESP32 via BLE |
 | [deploy.md](deploy.md) | Docker, Nginx, Certbot, DuckDNS, port forwarding, cron |
 | [backup-restore.md](backup-restore.md) | Backup e restauro da base de dados (Windows e Linux) |
 | [historico.md](historico.md) | Decisões, problemas e soluções ao longo do desenvolvimento |
+| [contexto.md](contexto.md) | Resumo do estado do projeto, para retomar em nova conversa |
 
 ## Stack tecnológico
 
@@ -56,6 +59,8 @@ Além destas, há um **dispositivo ESP32** que envia leituras de temperatura par
 | Servidor | Debian 13 (Trixie) |
 | DDNS | DuckDNS |
 | Controlo de versões | Git + GitHub |
+| App Android | Kotlin + Jetpack Compose |
+| Bluetooth | BLE (GATT) |
 
 ## Modelo de permissões
 

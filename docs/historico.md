@@ -114,7 +114,55 @@ O script original do DuckDNS usava curl -fsS, que não falha quando o DuckDNS de
 
 O backup da base de dados é feito por cron (diariamente às 03:00), com retenção de 30 dias. O script usa mysqldump --no-tablespaces (para evitar o erro de permissões do PROCESS).
 
-## 8. Estado final
+## 8. Configuração BLE
+
+### Decisão: modo configuração com botão físico
+
+Em vez de um switch, optou-se por um botão de pressão. O botão entra em modo configuração quando pressionado (no arranque ou a qualquer momento), e o dispositivo fica à espera de conexão BLE durante 5 minutos.
+
+### Decisão: JSON em vez de formato simples
+
+Com vários campos a configurar (Wi-Fi, MQTT, API, Device ID), o formato SSID;PASSWORD ficou frágil. Optou-se por JSON, com ArduinoJson no ESP32 e JSONObject na app Android.
+
+### Problema: ESP32 preso em loop de Wi-Fi com SSID errado
+
+O ESP32 ficou preso a tentar ligar-se a uma rede inexistente (ydff/fdd), porque a NVS tinha um SSID errado. O botão de configuração não respondia, porque o loop() estava bloqueado no ligarWiFi(). A solução foi:
+1. Apagar a NVS (Tools → Erase Flash → All Flash Contents) para limpar o SSID errado.
+2. Verificar o botão dentro do ligarWiFi() a cada 100 ms, para o botão funcionar mesmo durante a tentativa de Wi-Fi.
+
+### Problema: conexão BLE caía antes dos 5 minutos
+
+A conexão BLE caía sozinha em menos de um minuto. A causa era a coexistência de rádio no ESP32 (Wi-Fi e BLE partilham o mesmo módulo 2.4 GHz). A solução foi:
+1. Desligar o Wi-Fi no modo configuração (WiFi.disconnect(true) + WiFi.mode(WIFI_OFF)).
+2. Aumentar o timeout de conexão para 5 minutos.
+3. Keepalive BLE a cada 10 segundos.
+
+### Problema: MQTT não ligava após configurar o Wi-Fi
+
+Após configurar o Wi-Fi pela app, o MQTT falhava com rc=5 (UNAUTHORIZED). A causa era a password do MQTT ausente no JSON (o formulário da app não a pré-preenchia). A solução foi:
+1. O ESP32 mantém o valor atual da NVS quando um campo vem vazio no JSON.
+2. A app pré-preenche os campos não sensíveis a partir dos logs enviados pelo ESP32.
+3. A password do MQTT fica vazia no formulário, e o utilizador pode deixá-la vazia (mantém a atual) ou escrever uma nova.
+
+### Problema: status=133 na app Android
+
+A app Android reporta status=133 (GATT_ERROR) ao enviar o JSON ou cancelar. A operação funciona na mesma (o ESP32 recebe, guarda e reinicia), mas o Android não recebe a confirmação GATT a tempo. A causa provável é a coexistência de rádio no ESP32, e a API de coexistência da Espressif (ESP_COEX_PREFER_BT) não está disponível no core Arduino-ESP32 usado no projeto.
+
+Ficou registado como limitação conhecida (cosmética), para resolver numa fase posterior.
+
+### Problema: ciclo de reconexões MQTT (already connected)
+
+O ESP32 ligava-se ao broker, e o broker fechava a ligação com already connected, closing old connection, repetidamente. A causa era o PubSubClient, que reportava a ligação como perdida mesmo quando o broker ainda a via como ativa, levando a reconexões constantes.
+
+A solução foi migrar para o esp-mqtt, a biblioteca oficial da Espressif, que gere a reconexão de forma estável. Além disso, o clientId passou a incluir um contador único por tentativa, para evitar sobreposição de IDs.
+
+### Problema: has exceeded timeout no broker
+
+O broker desligava o ESP32 com has exceeded timeout, disconnecting, mesmo com o keepalive de 60 segundos. A causa era a ordem no setup(): o MQTT era iniciado antes do NTP, e quando o NTP sincronizava e saltava o relógio, o esp-mqtt pensava que o keepalive tinha expirado.
+
+A solução foi inverter a ordem: o NTP sincroniza primeiro, e o MQTT só arranca depois. Com o relógio estável, o keepalive é enviado no intervalo correto, e o broker não desliga o cliente.
+
+## 9. Estado final
 
 | Componente | Estado |
 |---|---|
@@ -125,18 +173,21 @@ O backup da base de dados é feito por cron (diariamente às 03:00), com retenç
 | Gestão de dispositivos | Funcional |
 | MQTT (leitura sob pedido) | Funcional |
 | ESP32 (modo simulado) | Funcional |
+| Modo configuração BLE | Funcional |
+| App Android de configuração | Funcional |
 | HTTPS com Let's Encrypt | Funcional |
 | Renovação automática do certificado | Configurada |
 | Backup automático da base de dados | Configurado |
 | DuckDNS com verificação | Configurado |
 | Port forwarding | Configurado |
 
-## 9. Próximos passos (pendentes)
+## 10. Próximos passos (pendentes)
 
 | Item | Prioridade |
 |---|---|
 | Substituir o DHT11 avariado | Média |
 | Configurar setCACert no ESP32 (em vez de setInsecure) | Média |
+| Resolver o status=133 na app Android | Baixa |
 | Configurar MQTT sobre TLS (porta 8883) | Baixa |
 | Backup remoto (S3 ou outro servidor) | Baixa |
 | UPS para o servidor | Baixa |
